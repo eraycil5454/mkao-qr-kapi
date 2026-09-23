@@ -23,7 +23,7 @@ main{max-width:650px;margin:auto;padding:15px}.card{background:#fff;border-radiu
 <div id="reader"></div><div id="result" class="result">Kamera hazırlanıyor...</div>
 </div></main>
 <script>
-const BACKEND="https://script.google.com/macros/s/AKfycbzQOec3vX6DU68XsnnyvoosDMX-lxCFERWsfgNqkhXwuoZ-y3fCWyHRopH_qZzqYKks/exec";
+const BACKEND="https://script.google.com/macros/s/AKfycbzQimtQ3P_ZFiIMYl4xMt9I6fMsM9QisU3Dt1viwVtiYxOXXRoY93klcDgkSGzMc9M9/exec";
 let mode="CIKIS",busy=false,last="",lastTime=0;
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function msg(s,ok){result.className="result "+(ok?"ok":"bad");result.innerHTML=s;}
