@@ -1,428 +1,50 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MKAO QR KAPI</title>
-
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
 <style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  color: #172033;
-}
-
-.ust {
-  background: #fff;
-  padding: 18px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-}
-
-.ust h1 {
-  margin: 0;
-  font-size: 22px;
-}
-
-.ust p {
-  margin: 6px 0 0;
-  color: #666;
-  font-size: 14px;
-}
-
-.alan {
-  max-width: 520px;
-  margin: 20px auto;
-  padding: 15px;
-}
-
-.modlar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.mod {
-  flex: 1;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 10px;
-  font-size: 17px;
-  font-weight: bold;
-  cursor: pointer;
-  background: #ddd;
-  color: #333;
-}
-
-.mod.aktif {
-  background: #172033;
-  color: white;
-}
-
-#reader {
-  width: 100%;
-  background: #000;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.durum {
-  margin-top: 15px;
-  background: #fff;
-  border-radius: 14px;
-  padding: 18px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  min-height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: pre-line;
-}
-
-.bilgi {
-  margin-top: 10px;
-  text-align: center;
-  color: #777;
-  font-size: 13px;
-}
+body{margin:0;background:#f3f6f9;color:#10233f;font-family:Arial,sans-serif}
+header{background:#12385b;color:#fff;padding:18px;text-align:center}
+main{max-width:650px;margin:auto;padding:15px}.card{background:#fff;border-radius:16px;padding:16px;box-shadow:0 4px 20px #0001}
+.mode{display:flex;gap:8px;margin-bottom:12px}.mode button{flex:1;padding:13px;border:0;border-radius:10px;font-weight:700;background:#e8edf2}
+.mode button.active{background:#12385b;color:white}
+#reader{width:100%;overflow:hidden;border-radius:12px}.result{margin-top:14px;padding:18px;text-align:center;border-radius:12px;background:#eef2f5;min-height:60px}
+.ok{background:#e6f7eb;color:#12632b}.bad{background:#fdecec;color:#8a2020}
 </style>
 </head>
-
 <body>
-
-<div class="ust">
-  <h1>MKAO QR KAPI</h1>
-  <p>Öğrenci Çıkış / Giriş Sistemi</p>
-</div>
-
-<div class="alan">
-
-  <div class="modlar">
-
-    <button
-      id="cikisBtn"
-      class="mod aktif"
-      onclick="modSec('CIKIS')">
-      🟢 ÇIKIŞ
-    </button>
-
-    <button
-      id="girisBtn"
-      class="mod"
-      onclick="modSec('GIRIS')">
-      🔵 GİRİŞ
-    </button>
-
-  </div>
-
-  <div id="reader"></div>
-
-  <div id="durum" class="durum">
-    Kamera başlatılıyor...
-  </div>
-
-  <div class="bilgi">
-    QR kodu kameraya gösterin.
-  </div>
-
-</div>
-
+<header><b>MKAO QR KAPI</b><br><small>Öğle Arası Giriş / Çıkış</small></header>
+<main><div class="card">
+<div class="mode"><button id="c" class="active" onclick="mode='CIKIS';c.classList.add('active');g.classList.remove('active')">🚪 ÇIKIŞ</button><button id="g" onclick="mode='GIRIS';g.classList.add('active');c.classList.remove('active')">↩️ GİRİŞ</button></div>
+<div id="reader"></div><div id="result" class="result">Kamera hazırlanıyor...</div>
+</div></main>
 <script>
-
-const BACKEND_URL =
-"https://script.google.com/macros/s/AKfycbzQOec3vX6DU68XsnnyvoosDMX-lxCFERWsfgNqkhXwuoZ-y3fCWyHRopH_qZzqYKks/exec";
-
-let taramaKilitli = false;
-
-let aktifMod = "CIKIS";
-
-
-function modSec(mod) {
-
-  aktifMod = mod;
-
-  const cikisBtn =
-    document.getElementById("cikisBtn");
-
-  const girisBtn =
-    document.getElementById("girisBtn");
-
-  cikisBtn.classList.remove("aktif");
-  girisBtn.classList.remove("aktif");
-
-  if (mod === "CIKIS") {
-
-    cikisBtn.classList.add("aktif");
-
-    durumYaz(
-      "🟢 ÇIKIŞ modu aktif\nQR kodu okutun."
-    );
-
-  } else {
-
-    girisBtn.classList.add("aktif");
-
-    durumYaz(
-      "🔵 GİRİŞ modu aktif\nQR kodu okutun."
-    );
-  }
+const BACKEND="https://script.google.com/macros/s/AKfycbzQOec3vX6DU68XsnnyvoosDMX-lxCFERWsfgNqkhXwuoZ-y3fCWyHRopH_qZzqYKks/exec";
+let mode="CIKIS",busy=false,last="",lastTime=0;
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function msg(s,ok){result.className="result "+(ok?"ok":"bad");result.innerHTML=s;}
+function send(kod){
+ const now=Date.now();if(busy||(kod===last&&now-lastTime<2500))return;
+ busy=true;last=kod;lastTime=now;msg("Okundu: <b>"+esc(kod)+"</b><br>İşlem gönderiliyor...",false);
+ const cb="mkao_cb_"+now;
+ window[cb]=function(r){
+   try{
+    if(r&&r.ok)msg("✅ <b>"+esc(r.adSoyad)+"</b><br>"+esc(r.sinif)+" · "+esc(r.saat)+"<br>"+esc(r.mesaj),true);
+    else msg("⛔ <b>"+esc((r&&r.adSoyad)||kod)+"</b><br>"+esc((r&&r.mesaj)||"İşlem reddedildi."),false);
+   }finally{busy=false;setTimeout(()=>{try{delete window[cb]}catch(e){}},1000);}
+ };
+ const s=document.createElement("script");
+ s.src=BACKEND+"?api=qr&kod="+encodeURIComponent(kod)+"&islem="+encodeURIComponent(mode)+"&kaynak=GITHUB&callback="+cb;
+ s.onerror=()=>{busy=false;msg("⚠️ Apps Script bağlantısı kurulamadı.",false);};
+ document.body.appendChild(s);
 }
-
-
-function durumYaz(metin) {
-
-  document.getElementById("durum").textContent =
-    metin;
-}
-
-
-function qrOkundu(qrMetni) {
-
-  if (taramaKilitli) {
-    return;
-  }
-
-  let kod =
-    String(qrMetni || "").trim();
-
-  if (
-    kod.toUpperCase().startsWith("MKAO-")
-  ) {
-
-    kod = kod.toUpperCase();
-
-  } else {
-
-    try {
-
-      const url = new URL(kod);
-
-      const urlKod =
-        url.searchParams.get("kod");
-
-      if (urlKod) {
-
-        kod =
-          urlKod.trim().toUpperCase();
-      }
-
-    } catch (e) {
-
-      // QR URL değilse devam
-    }
-  }
-
-  if (!kod) {
-
-    durumYaz(
-      "❌ Geçersiz QR kodu"
-    );
-
-    return;
-  }
-  durumYaz("📷 OKUNAN KOD:\n" + kod);
-  taramaKilitli = true;
-
-  durumYaz(
-    "⏳ QR okundu – işlem yapılıyor..."
-  );
-
-
-  window.mkaoSonuc = function(sonuc) {
-
-    console.log(
-      "Apps Script:",
-      sonuc
-    );
-
-
-    if (!sonuc) {
-
-      durumYaz(
-        "❌ Sunucudan sonuç alınamadı."
-      );
-
-      taramaKilitli = false;
-
-      return;
-    }
-
-
-    if (sonuc.ok === false) {
-
-      if (
-        sonuc.sonuc === "MÜKERRER"
-      ) {
-
-        durumYaz(
-          "⚠️ MÜKERRER ÇIKIŞ\n" +
-          (sonuc.adSoyad || "")
-        );
-
-      } else {
-
-        durumYaz(
-          "❌ " +
-          (sonuc.mesaj ||
-           "İşlem reddedildi.")
-        );
-      }
-
-
-      setTimeout(function() {
-
-        modSec(aktifMod);
-
-        taramaKilitli = false;
-
-      }, 3000);
-
-      return;
-    }
-
-
-    if (
-      sonuc.ok === true &&
-      sonuc.sonuc === "ONAY"
-    ) {
-
-      durumYaz(
-        "✅ " +
-        (sonuc.islem || "İŞLEM") +
-        "\n" +
-        (sonuc.adSoyad || "") +
-        " - " +
-        (sonuc.sinif || "")
-      );
-
-
-      setTimeout(function() {
-
-        modSec(aktifMod);
-
-        taramaKilitli = false;
-
-      }, 3000);
-
-      return;
-    }
-
-
-    durumYaz(
-      "❌ Beklenmeyen sonuç."
-    );
-
-    taramaKilitli = false;
-  };
-
-
-  const script =
-    document.createElement("script");
-
-
-  script.src =
-    BACKEND_URL +
-    "?api=jsonp" +
-    "&kod=" +
-    encodeURIComponent(kod) +
-    "&kaynak=KAPI" +
-    "&islem=" +
-    encodeURIComponent(aktifMod) +
-    "&callback=mkaoSonuc" +
-    "&t=" +
-    Date.now();
-
-
-  script.onerror = function() {
-
-    durumYaz(
-      "❌ Sunucuya ulaşılamadı."
-    );
-
-    taramaKilitli = false;
-  };
-
-
-  document.body.appendChild(script);
-
-
-  setTimeout(function() {
-
-    if (script.parentNode) {
-
-      script.parentNode.removeChild(
-        script
-      );
-    }
-
-  }, 10000);
-}
-
-
-function kamerayiBaslat() {
-
-  const scanner =
-    new Html5Qrcode("reader");
-
-
-  scanner.start(
-
-    {
-      facingMode: {
-        exact: "environment"
-      }
-    },
-
-    {
-      fps: 10,
-
-      qrbox: {
-        width: 250,
-        height: 250
-      }
-    },
-
-    qrOkundu,
-
-    function(hata) {
-      // Normal tarama hatalarını gösterme
-    }
-
-  ).then(function() {
-
-    durumYaz(
-      "🟢 ÇIKIŞ modu aktif\nQR kodu okutun."
-    );
-
-  }).catch(function(hata) {
-
-    console.error(hata);
-
-    durumYaz(
-      "❌ Kamera başlatılamadı.\n" +
-      "Kamera iznini kontrol edin."
-    );
-
-  });
-}
-
-
-window.addEventListener(
-  "load",
-  kamerayiBaslat
-);
-
+const qr=new Html5Qrcode("reader");
+qr.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},t=>send(String(t).trim().toUpperCase()),()=>{})
+.catch(()=>msg("Kamera açılamadı. Kamera iznini kontrol edin.",false));
 </script>
-
 </body>
 </html>
