@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MKAO QR Kapı Sistemi</title>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#172033}
@@ -142,16 +142,27 @@ async function kameraBaslat() {
     scanner = new Html5Qrcode("reader");
 
     const config = {
-      fps: 10,
+      fps: 15,
       qrbox: function(width, height) {
-        const size = Math.floor(Math.min(width, height) * 0.70);
-        return { width: size, height: size };
+        const size = Math.max(220, Math.floor(Math.min(width, height) * 0.82));
+        return { width: Math.min(size, 420), height: Math.min(size, 420) };
       },
-      aspectRatio: 1.0
+      aspectRatio: 1.7777778,
+      disableFlip: true,
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+      }
+    };
+
+    const cameraConfig = {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
     };
 
     try {
-      await scanner.start({ facingMode: { exact: "environment" } }, config, qrOkundu, function(){});
+      await scanner.start(cameraConfig, config, qrOkundu, function(){});
     } catch (firstError) {
       await scanner.start({ facingMode: "environment" }, config, qrOkundu, function(){});
     }
