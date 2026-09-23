@@ -78,12 +78,13 @@ body{margin:0;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#1
    BURAYA KENDİ /exec ADRESİNİZİ YAZIN.
    ===================================================== */
 const BACKEND_URL =
-"https://script.google.com/macros/s/AKfycbxMOhG8fv3iV3i1r9Nfk5Toqn6zWHRSZsusi3wGvGX3lwkUCjByOENVFlNC8pSjgVF-/exec";
+"https://script.google.com/macros/s/AKfycbzkV8WMSQIDrmCEbuOW2EJda6xfYIRkzqn30QAahYPN5eUSDPWSeDYn1dhuCJ6zGq-J/exec";
 
 let scanner = null;
 let kameraAktif = false;
 let sonKod = "";
 let sonTaramaZamani = 0;
+let islemZamanlayici = null;
 
 /* Apps Script doPost sonucu bu mesajla geri gönderilir. */
 window.addEventListener("message", function(event) {
@@ -92,14 +93,26 @@ window.addEventListener("message", function(event) {
   if (message.type !== "MKAO_QR_RESULT") return;
 
   const data = message.data || {};
-  const sonuc = data.sonuc || {};
+  const sonuc = data.sonuc ? data.sonuc : data;
 
-  if (data.ok === false) {
-    sistemMesaji(data.hata || sonuc.mesaj || "İşlem başarısız.", "error");
+  if (islemZamanlayici) {
+    clearTimeout(islemZamanlayici);
+    islemZamanlayici = null;
+  }
+
+  if (sonuc.ok === false) {
+    document.getElementById("studentBox").style.display = "block";
+    document.getElementById("studentName").textContent = sonKod || "Bilinmeyen QR";
+    document.getElementById("studentClass").textContent = "";
+    const errResult = document.getElementById("studentResult");
+    errResult.className = "result red";
+    errResult.textContent = "✕ " + (sonuc.hata || sonuc.mesaj || "İşlem başarısız.");
+    sistemMesaji(sonuc.hata || sonuc.mesaj || "İşlem başarısız.", "error");
+    bip(false);
     return;
   }
 
-  const ok = sonuc.ok === true || sonuc.sonuc === "ONAY";
+  const ok = sonuc.ok === true && sonuc.sonuc === "ONAY";
   const dup = sonuc.sonuc === "MÜKERRER";
 
   document.getElementById("studentBox").style.display = "block";
@@ -249,6 +262,15 @@ function qrOkundu(text) {
   }
 
   sistemMesaji("QR okundu – işlem yapılıyor...", "info");
+
+  if (islemZamanlayici) clearTimeout(islemZamanlayici);
+  islemZamanlayici = setTimeout(function() {
+    sistemMesaji(
+      "Sunucudan yanıt alınamadı. İnternet bağlantısını ve Apps Script Web App dağıtımını kontrol edin.",
+      "error"
+    );
+  }, 15000);
+
   ogrenciIsle(kod);
 }
 
@@ -270,27 +292,16 @@ function koduCikar(text) {
 }
 
 function ogrenciIsle(kod) {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = BACKEND_URL;
-  form.target = "backendFrame";
-  form.style.display = "none";
+  const frame = document.getElementById("backendFrame");
+  const url = BACKEND_URL
+    + "?api=qr&kaynak=KAPI&kod="
+    + encodeURIComponent(kod)
+    + "&t="
+    + Date.now();
 
-  const kodInput = document.createElement("input");
-  kodInput.type = "hidden";
-  kodInput.name = "kod";
-  kodInput.value = kod;
-
-  const kaynakInput = document.createElement("input");
-  kaynakInput.type = "hidden";
-  kaynakInput.name = "kaynak";
-  kaynakInput.value = "KAPI";
-
-  form.appendChild(kodInput);
-  form.appendChild(kaynakInput);
-  document.body.appendChild(form);
-  form.submit();
-  form.remove();
+  // Form POST yerine gizli iframe GET kullanıyoruz.
+  // Apps Script sonucu iframe içinden postMessage ile ana sayfaya döndürüyor.
+  frame.src = url;
 }
 
 function istatistikGuncelle() {
