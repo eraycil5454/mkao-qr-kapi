@@ -141,7 +141,7 @@ body {
 
 const BACKEND_URL =
 "https://script.google.com/macros/s/AKfycbzQOec3vX6DU68XsnnyvoosDMX-lxCFERWsfgNqkhXwuoZ-y3fCWyHRopH_qZzqYKks/exec";
-durumYaz("📷 OKUNAN KOD:\n" + kod);
+
 let taramaKilitli = false;
 
 let aktifMod = "CIKIS";
@@ -230,7 +230,7 @@ function qrOkundu(qrMetni) {
 
     return;
   }
-
+  durumYaz("📷 OKUNAN KOD:\n" + kod);
   taramaKilitli = true;
 
   durumYaz(
