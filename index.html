@@ -1,339 +1,415 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MKAO QR Kapı Sistemi</title>
-<script src="https://unpkg.com/html5-qrcode@2.3.8"></script>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#172033}
-.container{max-width:620px;margin:auto;padding:14px}
-.header,.camera-box,.status,.student,.stats{background:#fff;border-radius:18px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
-.header{text-align:center;padding:18px;margin-bottom:14px}
-.header h1{margin:0;font-size:21px}
-.header p{margin:7px 0 0;color:#657084;font-size:14px}
-.camera-box{padding:10px}
-#reader{width:100%;overflow:hidden;border-radius:14px}
-.button{width:100%;border:0;border-radius:14px;padding:16px;margin-top:10px;font-size:17px;font-weight:700;cursor:pointer;background:#123b63;color:#fff}
-.button.stop{background:#b42318}
-.status{margin-top:14px;padding:18px;text-align:center}
-.status-title{font-size:12px;color:#6b7280;margin-bottom:7px}
-.status-main{font-size:20px;font-weight:700}
-.student{margin-top:14px;padding:18px;display:none}
-.student-name{font-size:23px;font-weight:700}
-.student-class{margin-top:5px;color:#536273}
-.result{margin-top:12px;padding:12px;border-radius:12px;font-size:18px;font-weight:700}
-.ok{background:#eaf7ee;color:#16803c}
-.red{background:#fff0ef;color:#b42318}
-.dup{background:#fff6df;color:#9a6700}
-.info{background:#eef5fb;color:#123b63}
-.stats{margin-top:14px;padding:15px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:#f5f7fa;border-radius:12px;padding:10px;text-align:center}
-.stat b{display:block;font-size:22px}
-.stat span{display:block;font-size:11px;color:#687386;margin-top:3px}
-.footer{text-align:center;margin-top:15px;color:#7b8492;font-size:12px;line-height:1.5}
-</style>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>MKAO QR Kapı</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #172033;
+    }
+
+    .ust {
+      background: #ffffff;
+      padding: 18px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .ust h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .ust p {
+      margin: 6px 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .alan {
+      max-width: 520px;
+      margin: 20px auto;
+      padding: 15px;
+    }
+
+    #reader {
+      width: 100%;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .durum {
+      margin-top: 15px;
+      background: white;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bilgi {
+      margin-top: 10px;
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+    }
+
+  </style>
 </head>
+
 <body>
-<div class="container">
-  <div class="header">
-    <h1>Mustafa Kemal Atatürk Ortaokulu</h1>
-    <p>QR Öğrenci Giriş – Çıkış Sistemi</p>
+
+  <div class="ust">
+
+    <h1>
+      MKAO QR KAPI
+    </h1>
+
+    <p>
+      Öğrenci Çıkış / Giriş Sistemi
+    </p>
+
   </div>
 
-  <div class="camera-box">
+
+  <div class="alan">
+
     <div id="reader"></div>
-    <button id="startButton" class="button" onclick="kameraBaslat()">📷 KAMERAYI BAŞLAT</button>
-    <button id="stopButton" class="button stop" onclick="kameraDurdur()" style="display:none">⛔ KAMERAYI DURDUR</button>
+
+    <div
+      id="durum"
+      class="durum"
+    >
+      Kamera başlatılıyor...
+    </div>
+
+    <div class="bilgi">
+      QR kodu kameraya gösterin.
+    </div>
+
   </div>
 
-  <div class="status">
-    <div class="status-title">SİSTEM DURUMU</div>
-    <div id="systemStatus" class="status-main info">Kamera başlatılmayı bekliyor</div>
-  </div>
-
-  <div id="studentBox" class="student">
-    <div id="studentName" class="student-name"></div>
-    <div id="studentClass" class="student-class"></div>
-    <div id="studentResult" class="result info"></div>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><b id="cikis">-</b><span>BUGÜNKÜ ÇIKIŞ</span></div>
-    <div class="stat"><b id="giris">-</b><span>BUGÜNKÜ GİRİŞ</span></div>
-    <div class="stat"><b id="disarida">-</b><span>DIŞARIDA</span></div>
-  </div>
-
-  <div class="footer">
-    Kamera bir kez açılır. Başarılı taramadan sonra kapanmaz; sonraki öğrencinin QR kodunu doğrudan okutabilirsiniz.
-  </div>
-</div>
-
-<iframe name="backendFrame" id="backendFrame" style="display:none"></iframe>
 
 <script>
-/* =====================================================
-   APPS SCRIPT WEB APP ADRESİ
-   BURAYA KENDİ /exec ADRESİNİZİ YAZIN.
-   ===================================================== */
+
 const BACKEND_URL =
-"https://script.google.com/macros/s/AKfycbzOI7zW2a8Q9qLslXe3aJnJdTaAK6BXqt7CIfv82o3mdLI5-f8uMTYy3uOziCWYASbt/exec";
+"https://script.google.com/macros/s/AKfycbzQOec3vX6DU68XsnnyvoosDMX-lxCFERWsfgNqkhXwuoZ-y3fCWyHRopH_qZzqYKks/exec";
 
-let scanner = null;
-let kameraAktif = false;
-let sonKod = "";
-let sonTaramaZamani = 0;
-let islemZamanlayici = null;
 
-/* Apps Script doPost sonucu bu mesajla geri gönderilir. */
-window.addEventListener("message", function(event) {
-  const message = event.data || {};
+let taramaKilitli = false;
 
-  if (message.type !== "MKAO_QR_RESULT") return;
 
-  const data = message.data || {};
-  const sonuc = data.sonuc ? data.sonuc : data;
+/*
+ * Ekrandaki durumu değiştirir.
+ */
+function durumYaz(metin) {
 
-  if (islemZamanlayici) {
-    clearTimeout(islemZamanlayici);
-    islemZamanlayici = null;
-  }
+  document.getElementById("durum")
+    .textContent = metin;
+}
 
-  if (sonuc.ok === false) {
-    document.getElementById("studentBox").style.display = "block";
-    document.getElementById("studentName").textContent = sonKod || "Bilinmeyen QR";
-    document.getElementById("studentClass").textContent = "";
-    const errResult = document.getElementById("studentResult");
-    errResult.className = "result red";
-    errResult.textContent = "✕ " + (sonuc.hata || sonuc.mesaj || "İşlem başarısız.");
-    sistemMesaji(sonuc.hata || sonuc.mesaj || "İşlem başarısız.", "error");
-    bip(false);
+
+/*
+ * QR okunduğunda çalışır.
+ */
+function qrOkundu(qrMetni) {
+
+  if (taramaKilitli) {
     return;
   }
 
-  const ok = sonuc.ok === true && sonuc.sonuc === "ONAY";
-  const dup = sonuc.sonuc === "MÜKERRER";
+  let kod = String(qrMetni || "")
+    .trim();
 
-  document.getElementById("studentBox").style.display = "block";
-  document.getElementById("studentName").textContent = sonuc.adSoyad || sonKod;
-  document.getElementById("studentClass").textContent =
-    sonuc.sinif ? ("Sınıf: " + sonuc.sinif) : "";
+  /*
+   * QR doğrudan MKAO-100 olabilir.
+   */
+  if (
+    kod.toUpperCase().startsWith("MKAO-")
+  ) {
 
-  const result = document.getElementById("studentResult");
+    kod = kod.toUpperCase();
 
-  if (ok) {
-    result.className = "result ok";
-    result.textContent =
-      (sonuc.sonuc === "ONAY" ? "✓ " : "") +
-      (sonuc.mesaj || "İşlem onaylandı.") +
-      (sonuc.saat ? "  " + sonuc.saat : "");
-    sistemMesaji(
-      (sonuc.islem || "İŞLEM") + " – ONAY",
-      "success"
-    );
-    bip(true);
-  } else if (dup) {
-    result.className = "result dup";
-    result.textContent = "⚠ " + (sonuc.mesaj || "Mükerrer işlem.");
-    sistemMesaji("MÜKERRER İŞLEM", "warning");
-    bip(false);
   } else {
-    result.className = "result red";
-    result.textContent = "✕ " + (sonuc.mesaj || "İşlem reddedildi.");
-    sistemMesaji("İŞLEM REDDEDİLDİ", "error");
-    bip(false);
+
+    /*
+     * QR URL içeriyorsa kod parametresini al.
+     */
+    try {
+
+      const url = new URL(kod);
+
+      const urlKod =
+        url.searchParams.get("kod");
+
+      if (urlKod) {
+        kod = urlKod
+          .trim()
+          .toUpperCase();
+      }
+
+    } catch (e) {
+      // URL değilse olduğu gibi bırak
+    }
   }
 
-  istatistikGuncelle();
-});
-
-async function kameraBaslat() {
-  if (kameraAktif) return;
-
-  const status = document.getElementById("systemStatus");
-  const startBtn = document.getElementById("startButton");
-  startBtn.disabled = true;
-  startBtn.textContent = "📷 KAMERA AÇILIYOR...";
-  sistemMesaji("Kamera hazırlanıyor...", "info");
-
-  try {
-    // Önce tarayıcının gerçek kamera erişimini test et.
-    // Bu, telefon izinleri açıkken html5-qrcode'nun kamerayı bulmasını kolaylaştırır.
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error("Bu tarayıcı kamera erişimini desteklemiyor veya HTTPS değil.");
-    }
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
-    });
-
-    // Test akışını hemen kapatıyoruz; asıl kamera html5-qrcode tarafından açılacak.
-    stream.getTracks().forEach(track => track.stop());
-
-    if (scanner) {
-      try { await scanner.clear(); } catch(e) {}
-    }
-
-    scanner = new Html5Qrcode("reader", {
-      verbose: false
-    });
-
-    const config = {
-      fps: 10,
-      qrbox: function(width, height) {
-        const size = Math.floor(Math.min(width, height) * 0.70);
-        return {
-          width: Math.max(180, Math.min(size, 360)),
-          height: Math.max(180, Math.min(size, 360))
-        };
-      },
-      disableFlip: false
-    };
-
-    // En uyumlu yöntem: sadece arka kamera iste.
-    await scanner.start(
-      { facingMode: "environment" },
-      config,
-      qrOkundu,
-      function() {}
-    );
-
-    kameraAktif = true;
-    startBtn.style.display = "none";
-    startBtn.disabled = false;
-    startBtn.textContent = "📷 KAMERAYI BAŞLAT";
-    document.getElementById("stopButton").style.display = "block";
-    sistemMesaji("Kamera aktif – QR bekleniyor", "success");
-
-  } catch (error) {
-    console.error("KAMERA HATASI:", error);
-
-    kameraAktif = false;
-    startBtn.disabled = false;
-    startBtn.textContent = "📷 KAMERAYI TEKRAR DENE";
-
-    let mesaj = "Kamera açılamadı.";
-
-    if (error && error.name === "NotAllowedError") {
-      mesaj = "Kamera izni tarayıcı tarafından engellendi. Site kamera iznini Açık yapıp sayfayı yenileyin.";
-    } else if (error && error.name === "NotFoundError") {
-      mesaj = "Telefon kamerası bulunamadı.";
-    } else if (error && error.name === "NotReadableError") {
-      mesaj = "Kamera başka bir uygulama tarafından kullanılıyor. Kamera uygulamasını kapatıp tekrar deneyin.";
-    } else if (error && error.name === "SecurityError") {
-      mesaj = "Tarayıcı güvenlik nedeniyle kamerayı açmadı. Sayfayı HTTPS adresinden açın.";
-    }
-
-    sistemMesaji(mesaj, "error");
-    alert(mesaj);
-  }
-}
-async function kameraDurdur() {
-  if (!scanner) return;
-
-  try {
-    await scanner.stop();
-    scanner.clear();
-  } catch (error) {
-    console.log(error);
-  }
-
-  kameraAktif = false;
-  document.getElementById("startButton").style.display = "block";
-  document.getElementById("stopButton").style.display = "none";
-  sistemMesaji("Kamera kapatıldı", "info");
-}
-
-function qrOkundu(text) {
-  const simdi = Date.now();
-
-  if (text === sonKod && simdi - sonTaramaZamani < 4000) return;
-
-  sonKod = text;
-  sonTaramaZamani = simdi;
-
-  const kod = koduCikar(text);
 
   if (!kod) {
-    sistemMesaji("Geçersiz öğrenci QR kodu", "error");
+
+    durumYaz(
+      "❌ Geçersiz QR kodu"
+    );
+
     return;
   }
 
-  sistemMesaji("QR okundu – işlem yapılıyor...", "info");
 
-  if (islemZamanlayici) clearTimeout(islemZamanlayici);
-  islemZamanlayici = setTimeout(function() {
-    sistemMesaji(
-      "Sunucudan yanıt alınamadı. İnternet bağlantısını ve Apps Script Web App dağıtımını kontrol edin.",
-      "error"
+  /*
+   * Aynı QR'ın kamera tarafından
+   * art arda okunmasını engelle.
+   */
+  taramaKilitli = true;
+
+  durumYaz(
+    "⏳ QR okundu – işlem yapılıyor..."
+  );
+
+
+  /*
+   * JSONP callback
+   */
+  window.mkaoSonuc = function(sonuc) {
+
+    console.log(
+      "Apps Script sonucu:",
+      sonuc
     );
-  }, 15000);
 
-  ogrenciIsle(kod);
+
+    if (!sonuc) {
+
+      durumYaz(
+        "❌ Sunucudan sonuç alınamadı."
+      );
+
+      taramaKilitli = false;
+      return;
+    }
+
+
+    /*
+     * RED
+     */
+    if (sonuc.ok === false) {
+
+      if (sonuc.sonuc === "MÜKERRER") {
+
+        durumYaz(
+          "⚠️ MÜKERRER ÇIKIŞ\n" +
+          (sonuc.adSoyad || "")
+        );
+
+      } else {
+
+        durumYaz(
+          "❌ " +
+          (sonuc.mesaj || "İşlem reddedildi.")
+        );
+      }
+
+
+      setTimeout(
+        function() {
+
+          durumYaz(
+            "QR kodu kameraya gösterin."
+          );
+
+          taramaKilitli = false;
+
+        },
+        3000
+      );
+
+      return;
+    }
+
+
+    /*
+     * ONAY
+     */
+    if (
+      sonuc.ok === true &&
+      sonuc.sonuc === "ONAY"
+    ) {
+
+      durumYaz(
+        "✅ " +
+        (sonuc.islem || "İŞLEM") +
+        "\n" +
+        (sonuc.adSoyad || "") +
+        " - " +
+        (sonuc.sinif || "")
+      );
+
+
+      setTimeout(
+        function() {
+
+          durumYaz(
+            "QR kodu kameraya gösterin."
+          );
+
+          taramaKilitli = false;
+
+        },
+        3000
+      );
+
+      return;
+    }
+
+
+    durumYaz(
+      "❌ Beklenmeyen sonuç."
+    );
+
+    taramaKilitli = false;
+  };
+
+
+  /*
+   * JSONP için script etiketi oluştur.
+   */
+  const script =
+    document.createElement("script");
+
+
+  script.src =
+    BACKEND_URL +
+    "?api=jsonp" +
+    "&kod=" +
+    encodeURIComponent(kod) +
+    "&kaynak=KAPI" +
+    "&callback=mkaoSonuc" +
+    "&t=" +
+    Date.now();
+
+
+  script.onerror = function() {
+
+    durumYaz(
+      "❌ Sunucuya ulaşılamadı."
+    );
+
+    taramaKilitli = false;
+  };
+
+
+  document.body.appendChild(script);
+
+
+  /*
+   * Script etiketini biraz sonra temizle.
+   */
+  setTimeout(
+    function() {
+
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+
+    },
+    10000
+  );
 }
 
-function koduCikar(text) {
-  text = String(text || "").trim();
 
-  if (text.toUpperCase().startsWith("MKAO-")) {
-    return text.toUpperCase();
-  }
+/*
+ * Kamera başlat.
+ */
+function kamerayiBaslat() {
 
-  try {
-    const url = new URL(text);
-    const kod = url.searchParams.get("kod");
-    if (kod) return kod.trim().toUpperCase();
-  } catch(e) {}
+  const scanner =
+    new Html5Qrcode("reader");
 
-  const match = text.match(/MKAO-[A-Z0-9_-]+/i);
-  return match ? match[0].toUpperCase() : "";
+
+  scanner.start(
+
+    {
+      facingMode: {
+        exact: "environment"
+      }
+    },
+
+    {
+      fps: 10,
+
+      qrbox: {
+        width: 250,
+        height: 250
+      }
+
+    },
+
+    qrOkundu,
+
+    function(hata) {
+      // Normal kamera tarama hatalarını
+      // ekrana yazmıyoruz.
+    }
+
+  ).then(function() {
+
+    durumYaz(
+      "📷 Kamera hazır – QR kodu okutun."
+    );
+
+  }).catch(function(hata) {
+
+    console.error(hata);
+
+    durumYaz(
+      "❌ Kamera başlatılamadı. " +
+      "Kamera iznini kontrol edin."
+    );
+
+  });
 }
 
-function ogrenciIsle(kod) {
-  const frame = document.getElementById("backendFrame");
-  const url = BACKEND_URL
-    + "?api=qr&kaynak=KAPI&kod="
-    + encodeURIComponent(kod)
-    + "&t="
-    + Date.now();
 
-  // Form POST yerine gizli iframe GET kullanıyoruz.
-  // Apps Script sonucu iframe içinden postMessage ile ana sayfaya döndürüyor.
-  frame.src = url;
-}
+/*
+ * Sayfa açıldığında kamerayı başlat.
+ */
+window.addEventListener(
+  "load",
+  kamerayiBaslat
+);
 
-function istatistikGuncelle() {
-  /* Panel değerleri sunucudan ayrıca okunabilir.
-     İşlem sonrası mevcut ekranda - kalmaması için
-     sayfayı 2 saniye sonra backend panel verisini istemek
-     yerine işlem sonucu ile temel değerleri koruyoruz. */
-}
-
-function sistemMesaji(mesaj, tip) {
-  const el = document.getElementById("systemStatus");
-  el.textContent = mesaj;
-  el.className = "status-main " + tip;
-}
-
-function bip(basarili) {
-  try {
-    const context = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.frequency.value = basarili ? 900 : 350;
-    gain.gain.value = 0.08;
-    oscillator.start();
-    oscillator.stop(context.currentTime + (basarili ? 0.12 : 0.20));
-  } catch(e) {}
-}
-
-window.addEventListener("load", function() {
-  sistemMesaji("Kamera başlatılmayı bekliyor", "info");
-});
 </script>
+
 </body>
 </html>
