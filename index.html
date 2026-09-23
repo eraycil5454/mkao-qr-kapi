@@ -138,49 +138,85 @@ window.addEventListener("message", function(event) {
 async function kameraBaslat() {
   if (kameraAktif) return;
 
+  const status = document.getElementById("systemStatus");
+  const startBtn = document.getElementById("startButton");
+  startBtn.disabled = true;
+  startBtn.textContent = "📷 KAMERA AÇILIYOR...";
+  sistemMesaji("Kamera hazırlanıyor...", "info");
+
   try {
-    scanner = new Html5Qrcode("reader");
-
-    const config = {
-      fps: 15,
-      qrbox: function(width, height) {
-        const size = Math.max(220, Math.floor(Math.min(width, height) * 0.82));
-        return { width: Math.min(size, 420), height: Math.min(size, 420) };
-      },
-      aspectRatio: 1.7777778,
-      disableFlip: true,
-      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true
-      }
-    };
-
-    const cameraConfig = {
-      facingMode: { ideal: "environment" },
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    };
-
-    try {
-      await scanner.start(cameraConfig, config, qrOkundu, function(){});
-    } catch (firstError) {
-      await scanner.start({ facingMode: "environment" }, config, qrOkundu, function(){});
+    // Önce tarayıcının gerçek kamera erişimini test et.
+    // Bu, telefon izinleri açıkken html5-qrcode'nun kamerayı bulmasını kolaylaştırır.
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Bu tarayıcı kamera erişimini desteklemiyor veya HTTPS değil.");
     }
 
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false
+    });
+
+    // Test akışını hemen kapatıyoruz; asıl kamera html5-qrcode tarafından açılacak.
+    stream.getTracks().forEach(track => track.stop());
+
+    if (scanner) {
+      try { await scanner.clear(); } catch(e) {}
+    }
+
+    scanner = new Html5Qrcode("reader", {
+      verbose: false
+    });
+
+    const config = {
+      fps: 10,
+      qrbox: function(width, height) {
+        const size = Math.floor(Math.min(width, height) * 0.70);
+        return {
+          width: Math.max(180, Math.min(size, 360)),
+          height: Math.max(180, Math.min(size, 360))
+        };
+      },
+      disableFlip: false
+    };
+
+    // En uyumlu yöntem: sadece arka kamera iste.
+    await scanner.start(
+      { facingMode: "environment" },
+      config,
+      qrOkundu,
+      function() {}
+    );
+
     kameraAktif = true;
-    document.getElementById("startButton").style.display = "none";
+    startBtn.style.display = "none";
+    startBtn.disabled = false;
+    startBtn.textContent = "📷 KAMERAYI BAŞLAT";
     document.getElementById("stopButton").style.display = "block";
     sistemMesaji("Kamera aktif – QR bekleniyor", "success");
+
   } catch (error) {
-    console.error(error);
-    sistemMesaji("Kamera açılamadı.", "error");
-    alert(
-      "Kamera açılamadı.\n\n" +
-      "Telefon ayarlarından bu siteye kamera izni verin ve sayfayı HTTPS üzerinden açın."
-    );
+    console.error("KAMERA HATASI:", error);
+
+    kameraAktif = false;
+    startBtn.disabled = false;
+    startBtn.textContent = "📷 KAMERAYI TEKRAR DENE";
+
+    let mesaj = "Kamera açılamadı.";
+
+    if (error && error.name === "NotAllowedError") {
+      mesaj = "Kamera izni tarayıcı tarafından engellendi. Site kamera iznini Açık yapıp sayfayı yenileyin.";
+    } else if (error && error.name === "NotFoundError") {
+      mesaj = "Telefon kamerası bulunamadı.";
+    } else if (error && error.name === "NotReadableError") {
+      mesaj = "Kamera başka bir uygulama tarafından kullanılıyor. Kamera uygulamasını kapatıp tekrar deneyin.";
+    } else if (error && error.name === "SecurityError") {
+      mesaj = "Tarayıcı güvenlik nedeniyle kamerayı açmadı. Sayfayı HTTPS adresinden açın.";
+    }
+
+    sistemMesaji(mesaj, "error");
+    alert(mesaj);
   }
 }
-
 async function kameraDurdur() {
   if (!scanner) return;
 
