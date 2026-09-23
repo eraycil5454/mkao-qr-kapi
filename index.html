@@ -1,748 +1,281 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0,
-               maximum-scale=1.0,
-               user-scalable=no">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MKAO QR Kapı Sistemi</title>
-
 <script src="https://unpkg.com/html5-qrcode"></script>
-
 <style>
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    background: #f4f7fa;
-    font-family: Arial, Helvetica, sans-serif;
-    color: #172033;
-}
-
-.container {
-    max-width: 600px;
-    margin: auto;
-    padding: 16px;
-}
-
-.header {
-    background: white;
-    border-radius: 18px;
-    padding: 20px;
-    margin-bottom: 15px;
-    text-align: center;
-    box-shadow: 0 3px 12px rgba(0,0,0,.08);
-}
-
-.header h1 {
-    margin: 0;
-    font-size: 22px;
-}
-
-.header p {
-    margin: 7px 0 0;
-    color: #657084;
-    font-size: 14px;
-}
-
-.camera-box {
-    background: white;
-    border-radius: 18px;
-    padding: 12px;
-    box-shadow: 0 3px 12px rgba(0,0,0,.08);
-}
-
-#reader {
-    width: 100%;
-    border-radius: 15px;
-    overflow: hidden;
-}
-
-.button {
-    width: 100%;
-    border: none;
-    border-radius: 14px;
-    padding: 17px;
-    margin-top: 12px;
-    font-size: 17px;
-    font-weight: bold;
-    cursor: pointer;
-    background: #123b63;
-    color: white;
-}
-
-.button.stop {
-    background: #b42318;
-}
-
-.status {
-    margin-top: 15px;
-    background: white;
-    border-radius: 18px;
-    padding: 18px;
-    text-align: center;
-    box-shadow: 0 3px 12px rgba(0,0,0,.08);
-}
-
-.status-title {
-    font-size: 13px;
-    color: #6b7280;
-    margin-bottom: 8px;
-}
-
-.status-main {
-    font-size: 21px;
-    font-weight: bold;
-}
-
-.student {
-    margin-top: 12px;
-    background: #eef5fb;
-    padding: 15px;
-    border-radius: 14px;
-    display: none;
-}
-
-.student-name {
-    font-size: 21px;
-    font-weight: bold;
-}
-
-.student-class {
-    margin-top: 5px;
-    color: #536273;
-}
-
-.success {
-    color: #16803c;
-}
-
-.error {
-    color: #b42318;
-}
-
-.info {
-    color: #123b63;
-}
-
-.footer {
-    text-align: center;
-    margin-top: 18px;
-    color: #7b8492;
-    font-size: 12px;
-}
-
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#172033}
+.container{max-width:620px;margin:auto;padding:14px}
+.header,.camera-box,.status,.student,.stats{background:#fff;border-radius:18px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
+.header{text-align:center;padding:18px;margin-bottom:14px}
+.header h1{margin:0;font-size:21px}
+.header p{margin:7px 0 0;color:#657084;font-size:14px}
+.camera-box{padding:10px}
+#reader{width:100%;overflow:hidden;border-radius:14px}
+.button{width:100%;border:0;border-radius:14px;padding:16px;margin-top:10px;font-size:17px;font-weight:700;cursor:pointer;background:#123b63;color:#fff}
+.button.stop{background:#b42318}
+.status{margin-top:14px;padding:18px;text-align:center}
+.status-title{font-size:12px;color:#6b7280;margin-bottom:7px}
+.status-main{font-size:20px;font-weight:700}
+.student{margin-top:14px;padding:18px;display:none}
+.student-name{font-size:23px;font-weight:700}
+.student-class{margin-top:5px;color:#536273}
+.result{margin-top:12px;padding:12px;border-radius:12px;font-size:18px;font-weight:700}
+.ok{background:#eaf7ee;color:#16803c}
+.red{background:#fff0ef;color:#b42318}
+.dup{background:#fff6df;color:#9a6700}
+.info{background:#eef5fb;color:#123b63}
+.stats{margin-top:14px;padding:15px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f5f7fa;border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:22px}
+.stat span{display:block;font-size:11px;color:#687386;margin-top:3px}
+.footer{text-align:center;margin-top:15px;color:#7b8492;font-size:12px;line-height:1.5}
 </style>
-
 </head>
-
-
 <body>
-
 <div class="container">
+  <div class="header">
+    <h1>Mustafa Kemal Atatürk Ortaokulu</h1>
+    <p>QR Öğrenci Giriş – Çıkış Sistemi</p>
+  </div>
 
-    <div class="header">
+  <div class="camera-box">
+    <div id="reader"></div>
+    <button id="startButton" class="button" onclick="kameraBaslat()">📷 KAMERAYI BAŞLAT</button>
+    <button id="stopButton" class="button stop" onclick="kameraDurdur()" style="display:none">⛔ KAMERAYI DURDUR</button>
+  </div>
 
-        <h1>
-            Mustafa Kemal Atatürk Ortaokulu
-        </h1>
+  <div class="status">
+    <div class="status-title">SİSTEM DURUMU</div>
+    <div id="systemStatus" class="status-main info">Kamera başlatılmayı bekliyor</div>
+  </div>
 
-        <p>
-            QR Öğrenci Giriş – Çıkış Sistemi
-        </p>
+  <div id="studentBox" class="student">
+    <div id="studentName" class="student-name"></div>
+    <div id="studentClass" class="student-class"></div>
+    <div id="studentResult" class="result info"></div>
+  </div>
 
-    </div>
+  <div class="stats">
+    <div class="stat"><b id="cikis">-</b><span>BUGÜNKÜ ÇIKIŞ</span></div>
+    <div class="stat"><b id="giris">-</b><span>BUGÜNKÜ GİRİŞ</span></div>
+    <div class="stat"><b id="disarida">-</b><span>DIŞARIDA</span></div>
+  </div>
 
-
-    <div class="camera-box">
-
-        <div id="reader"></div>
-
-        <button
-            id="startButton"
-            class="button"
-            onclick="kameraBaslat()">
-
-            📷 KAMERAYI BAŞLAT
-
-        </button>
-
-        <button
-            id="stopButton"
-            class="button stop"
-            onclick="kameraDurdur()"
-            style="display:none">
-
-            ⛔ KAMERAYI DURDUR
-
-        </button>
-
-    </div>
-
-
-    <div class="status">
-
-        <div class="status-title">
-            SİSTEM DURUMU
-        </div>
-
-        <div
-            id="systemStatus"
-            class="status-main info">
-
-            Kamera başlatılmayı bekliyor
-
-        </div>
-
-    </div>
-
-
-    <div
-        id="studentBox"
-        class="student">
-
-        <div
-            id="studentName"
-            class="student-name">
-        </div>
-
-        <div
-            id="studentClass"
-            class="student-class">
-        </div>
-
-        <div
-            id="studentAction"
-            style="margin-top:10px;font-weight:bold;">
-        </div>
-
-    </div>
-
-
-    <div class="footer">
-
-        Kamera açık kaldığı sürece QR kodları
-        arka arkaya okutabilirsiniz.
-
-    </div>
-
+  <div class="footer">
+    Kamera bir kez açılır. Başarılı taramadan sonra kapanmaz; sonraki öğrencinin QR kodunu doğrudan okutabilirsiniz.
+  </div>
 </div>
 
-
-<!--
-    GİZLİ FORM
-
-    Kameradan okunan öğrenci kodu
-    Apps Script'e POST olarak gönderilir.
--->
-
-<iframe
-    name="backendFrame"
-    id="backendFrame"
-    style="display:none;">
-</iframe>
-
+<iframe name="backendFrame" id="backendFrame" style="display:none"></iframe>
 
 <script>
-
-
 /* =====================================================
-   1. APPS SCRIPT WEB APP ADRESİ
-   =====================================================
-
-   BURAYA KENDİ APPS SCRIPT ADRESİNİZİ YAZIN.
-*/
-
-const BACKEND_URL =
-"https://script.google.com/macros/s/AKfycbyR3oUSRWsaKyNyFRkEhiTF02TcHus55sCxe86rJgx-ZLmpMl2_3H9Rq6T8eYbOQS1I/exec";
-
-
-/* =====================================================
-   2. KAMERA
+   APPS SCRIPT WEB APP ADRESİ
+   BURAYA KENDİ /exec ADRESİNİZİ YAZIN.
    ===================================================== */
+const BACKEND_URL =
+"https://script.google.com/macros/s/AKfycbzkV8WMSQIDrmCEbuOW2EJda6xfYIRkzqn30QAahYPN5eUSDPWSeDYn1dhuCJ6zGq-J/exec";
 
 let scanner = null;
-
 let kameraAktif = false;
-
 let sonKod = "";
-
 let sonTaramaZamani = 0;
 
+/* Apps Script doPost sonucu bu mesajla geri gönderilir. */
+window.addEventListener("message", function(event) {
+  const message = event.data || {};
 
-/* =====================================================
-   3. KAMERAYI BAŞLAT
-   ===================================================== */
+  if (message.type !== "MKAO_QR_RESULT") return;
+
+  const data = message.data || {};
+  const sonuc = data.sonuc || {};
+
+  if (data.ok === false) {
+    sistemMesaji(data.hata || sonuc.mesaj || "İşlem başarısız.", "error");
+    return;
+  }
+
+  const ok = sonuc.ok === true || sonuc.sonuc === "ONAY";
+  const dup = sonuc.sonuc === "MÜKERRER";
+
+  document.getElementById("studentBox").style.display = "block";
+  document.getElementById("studentName").textContent = sonuc.adSoyad || sonKod;
+  document.getElementById("studentClass").textContent =
+    sonuc.sinif ? ("Sınıf: " + sonuc.sinif) : "";
+
+  const result = document.getElementById("studentResult");
+
+  if (ok) {
+    result.className = "result ok";
+    result.textContent =
+      (sonuc.sonuc === "ONAY" ? "✓ " : "") +
+      (sonuc.mesaj || "İşlem onaylandı.") +
+      (sonuc.saat ? "  " + sonuc.saat : "");
+    sistemMesaji(
+      (sonuc.islem || "İŞLEM") + " – ONAY",
+      "success"
+    );
+    bip(true);
+  } else if (dup) {
+    result.className = "result dup";
+    result.textContent = "⚠ " + (sonuc.mesaj || "Mükerrer işlem.");
+    sistemMesaji("MÜKERRER İŞLEM", "warning");
+    bip(false);
+  } else {
+    result.className = "result red";
+    result.textContent = "✕ " + (sonuc.mesaj || "İşlem reddedildi.");
+    sistemMesaji("İŞLEM REDDEDİLDİ", "error");
+    bip(false);
+  }
+
+  istatistikGuncelle();
+});
 
 async function kameraBaslat() {
+  if (kameraAktif) return;
 
-    if (kameraAktif) {
-        return;
-    }
+  try {
+    scanner = new Html5Qrcode("reader");
+
+    const config = {
+      fps: 10,
+      qrbox: function(width, height) {
+        const size = Math.floor(Math.min(width, height) * 0.70);
+        return { width: size, height: size };
+      },
+      aspectRatio: 1.0
+    };
 
     try {
-
-        scanner = new Html5Qrcode("reader");
-
-        await scanner.start(
-
-            {
-                facingMode: {
-                    exact: "environment"
-                }
-            },
-
-            {
-                fps: 10,
-
-                qrbox: function(width, height) {
-
-                    const size =
-                        Math.min(width, height) * 0.70;
-
-                    return {
-                        width: size,
-                        height: size
-                    };
-
-                },
-
-                aspectRatio: 1.0
-
-            },
-
-            qrOkundu,
-
-            function(errorMessage) {
-
-                // Kamera tarama sırasında
-                // bulunan QR olmayan görüntüler
-                // burada normal olarak hata üretebilir.
-
-            }
-
-        );
-
-
-        kameraAktif = true;
-
-        document.getElementById(
-            "startButton"
-        ).style.display = "none";
-
-
-        document.getElementById(
-            "stopButton"
-        ).style.display = "block";
-
-
-        sistemMesaji(
-            "Kamera aktif – QR bekleniyor",
-            "success"
-        );
-
+      await scanner.start({ facingMode: { exact: "environment" } }, config, qrOkundu, function(){});
+    } catch (firstError) {
+      await scanner.start({ facingMode: "environment" }, config, qrOkundu, function(){});
     }
 
-    catch(error) {
-
-        console.error(error);
-
-        sistemMesaji(
-            "Kamera açılamadı. Telefon kamera iznini kontrol edin.",
-            "error"
-        );
-
-        alert(
-            "Kamera açılamadı.\n\n" +
-            "1. Kamera iznini verin.\n" +
-            "2. Sayfayı HTTPS üzerinden açtığınızdan emin olun.\n" +
-            "3. Chrome/Safari kullanın."
-        );
-
-    }
-
+    kameraAktif = true;
+    document.getElementById("startButton").style.display = "none";
+    document.getElementById("stopButton").style.display = "block";
+    sistemMesaji("Kamera aktif – QR bekleniyor", "success");
+  } catch (error) {
+    console.error(error);
+    sistemMesaji("Kamera açılamadı.", "error");
+    alert(
+      "Kamera açılamadı.\n\n" +
+      "Telefon ayarlarından bu siteye kamera izni verin ve sayfayı HTTPS üzerinden açın."
+    );
+  }
 }
-
-
-/* =====================================================
-   4. KAMERAYI DURDUR
-   ===================================================== */
 
 async function kameraDurdur() {
+  if (!scanner) return;
 
-    if (!scanner) {
-        return;
-    }
+  try {
+    await scanner.stop();
+    scanner.clear();
+  } catch (error) {
+    console.log(error);
+  }
 
-    try {
-
-        await scanner.stop();
-
-        scanner.clear();
-
-    }
-
-    catch(error) {
-
-        console.log(error);
-
-    }
-
-    kameraAktif = false;
-
-
-    document.getElementById(
-        "startButton"
-    ).style.display = "block";
-
-
-    document.getElementById(
-        "stopButton"
-    ).style.display = "none";
-
-
-    sistemMesaji(
-        "Kamera kapatıldı",
-        "info"
-    );
-
+  kameraAktif = false;
+  document.getElementById("startButton").style.display = "block";
+  document.getElementById("stopButton").style.display = "none";
+  sistemMesaji("Kamera kapatıldı", "info");
 }
-
-
-/* =====================================================
-   5. QR OKUNDU
-   ===================================================== */
 
 function qrOkundu(text) {
+  const simdi = Date.now();
 
-    const simdi = Date.now();
+  if (text === sonKod && simdi - sonTaramaZamani < 4000) return;
 
+  sonKod = text;
+  sonTaramaZamani = simdi;
 
-    /*
-       Aynı QR kodun kamera tarafından
-       saniyede 10 kez okunmasını engeller.
-    */
+  const kod = koduCikar(text);
 
-    if (
-        text === sonKod &&
-        simdi - sonTaramaZamani < 4000
-    ) {
+  if (!kod) {
+    sistemMesaji("Geçersiz öğrenci QR kodu", "error");
+    return;
+  }
 
-        return;
-
-    }
-
-
-    sonKod = text;
-
-    sonTaramaZamani = simdi;
-
-
-    const kod = koduCikar(text);
-
-
-    if (!kod) {
-
-        sistemMesaji(
-            "Geçersiz öğrenci QR kodu",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    /*
-       QR okundu.
-       Kamera KAPATILMIYOR.
-    */
-
-    sistemMesaji(
-        "QR okundu – işlem gönderiliyor...",
-        "info"
-    );
-
-
-    ogrenciIsle(kod);
-
+  sistemMesaji("QR okundu – işlem yapılıyor...", "info");
+  ogrenciIsle(kod);
 }
-
-
-/* =====================================================
-   6. QR'DAN ÖĞRENCİ KODUNU ÇIKAR
-   ===================================================== */
 
 function koduCikar(text) {
+  text = String(text || "").trim();
 
-    text = String(text || "").trim();
+  if (text.toUpperCase().startsWith("MKAO-")) {
+    return text.toUpperCase();
+  }
 
+  try {
+    const url = new URL(text);
+    const kod = url.searchParams.get("kod");
+    if (kod) return kod.trim().toUpperCase();
+  } catch(e) {}
 
-    /*
-       QR doğrudan:
-       MKAO-100
-    */
-
-    if (
-        text.toUpperCase()
-        .startsWith("MKAO-")
-    ) {
-
-        return text.toUpperCase();
-
-    }
-
-
-    /*
-       QR bir URL ise:
-       https://....?kod=MKAO-100
-    */
-
-    try {
-
-        const url = new URL(text);
-
-        const kod =
-            url.searchParams.get("kod");
-
-        if (kod) {
-
-            return kod
-                .trim()
-                .toUpperCase();
-
-        }
-
-    }
-
-    catch(e) {
-
-        // URL değilse devam ediyoruz.
-
-    }
-
-
-    /*
-       Metnin içinde MKAO-xxxxx arayalım.
-    */
-
-    const match =
-        text.match(/MKAO-[A-Z0-9_-]+/i);
-
-
-    if (match) {
-
-        return match[0].toUpperCase();
-
-    }
-
-
-    return "";
-
+  const match = text.match(/MKAO-[A-Z0-9_-]+/i);
+  return match ? match[0].toUpperCase() : "";
 }
-
-
-/* =====================================================
-   7. ÖĞRENCİ İŞLEMİ
-   ===================================================== */
 
 function ogrenciIsle(kod) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = BACKEND_URL;
+  form.target = "backendFrame";
+  form.style.display = "none";
 
+  const kodInput = document.createElement("input");
+  kodInput.type = "hidden";
+  kodInput.name = "kod";
+  kodInput.value = kod;
 
-    /*
-       Apps Script'e gizli form POST ediyoruz.
+  const kaynakInput = document.createElement("input");
+  kaynakInput.type = "hidden";
+  kaynakInput.name = "kaynak";
+  kaynakInput.value = "KAPI";
 
-       Böylece GitHub Pages ile
-       Apps Script arasında CORS problemi
-       yaşamıyoruz.
-    */
-
-    const form =
-        document.createElement("form");
-
-
-    form.method = "POST";
-
-    form.action = BACKEND_URL;
-
-    form.target = "backendFrame";
-
-    form.style.display = "none";
-
-
-    const kodInput =
-        document.createElement("input");
-
-    kodInput.type = "hidden";
-
-    kodInput.name = "kod";
-
-    kodInput.value = kod;
-
-
-    const kaynakInput =
-        document.createElement("input");
-
-    kaynakInput.type = "hidden";
-
-    kaynakInput.name = "kaynak";
-
-    kaynakInput.value = "KAPI";
-
-
-    form.appendChild(kodInput);
-
-    form.appendChild(kaynakInput);
-
-
-    document.body.appendChild(form);
-
-    form.submit();
-
-    form.remove();
-
-
-    /*
-       Kullanıcıya işlem gönderildi bilgisini ver.
-    */
-
-    document.getElementById(
-        "studentBox"
-    ).style.display = "block";
-
-
-    document.getElementById(
-        "studentName"
-    ).textContent = kod;
-
-
-    document.getElementById(
-        "studentClass"
-    ).textContent =
-        "QR kodu sisteme gönderildi";
-
-
-    document.getElementById(
-        "studentAction"
-    ).textContent =
-        "✓ İşlem kaydediliyor";
-
-
-    sistemMesaji(
-        "✓ QR okundu – işlem gönderildi",
-        "success"
-    );
-
-
-    /*
-       Kısa ses.
-    */
-
-    bip();
-
-
+  form.appendChild(kodInput);
+  form.appendChild(kaynakInput);
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
 }
 
-
-/* =====================================================
-   8. SİSTEM MESAJI
-   ===================================================== */
+function istatistikGuncelle() {
+  /* Panel değerleri sunucudan ayrıca okunabilir.
+     İşlem sonrası mevcut ekranda - kalmaması için
+     sayfayı 2 saniye sonra backend panel verisini istemek
+     yerine işlem sonucu ile temel değerleri koruyoruz. */
+}
 
 function sistemMesaji(mesaj, tip) {
-
-    const el =
-        document.getElementById(
-            "systemStatus"
-        );
-
-
-    el.textContent = mesaj;
-
-
-    el.className =
-        "status-main " + tip;
-
+  const el = document.getElementById("systemStatus");
+  el.textContent = mesaj;
+  el.className = "status-main " + tip;
 }
 
-
-/* =====================================================
-   9. BİP SESİ
-   ===================================================== */
-
-function bip() {
-
-    try {
-
-        const context =
-            new (
-                window.AudioContext ||
-                window.webkitAudioContext
-            )();
-
-
-        const oscillator =
-            context.createOscillator();
-
-
-        const gain =
-            context.createGain();
-
-
-        oscillator.connect(gain);
-
-        gain.connect(context.destination);
-
-
-        oscillator.frequency.value = 900;
-
-        gain.gain.value = 0.08;
-
-
-        oscillator.start();
-
-
-        oscillator.stop(
-            context.currentTime + 0.12
-        );
-
-    }
-
-    catch(e) {
-
-        console.log(e);
-
-    }
-
+function bip(basarili) {
+  try {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.frequency.value = basarili ? 900 : 350;
+    gain.gain.value = 0.08;
+    oscillator.start();
+    oscillator.stop(context.currentTime + (basarili ? 0.12 : 0.20));
+  } catch(e) {}
 }
 
-
-/* =====================================================
-   10. SAYFA AÇILINCA
-   ===================================================== */
-
-window.addEventListener(
-    "load",
-    function() {
-
-        sistemMesaji(
-            "Kamera başlatılmayı bekliyor",
-            "info"
-        );
-
-    }
-);
-
+window.addEventListener("load", function() {
+  sistemMesaji("Kamera başlatılmayı bekliyor", "info");
+});
 </script>
-
 </body>
-
 </html>
