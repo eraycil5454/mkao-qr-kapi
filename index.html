@@ -44,6 +44,29 @@ body {
   padding: 15px;
 }
 
+.modlar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.mod {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 10px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+  background: #ddd;
+  color: #333;
+}
+
+.mod.aktif {
+  background: #172033;
+  color: white;
+}
+
 #reader {
   width: 100%;
   background: #000;
@@ -84,6 +107,24 @@ body {
 
 <div class="alan">
 
+  <div class="modlar">
+
+    <button
+      id="cikisBtn"
+      class="mod aktif"
+      onclick="modSec('CIKIS')">
+      🟢 ÇIKIŞ
+    </button>
+
+    <button
+      id="girisBtn"
+      class="mod"
+      onclick="modSec('GIRIS')">
+      🔵 GİRİŞ
+    </button>
+
+  </div>
+
   <div id="reader"></div>
 
   <div id="durum" class="durum">
@@ -103,57 +144,92 @@ const BACKEND_URL =
 
 let taramaKilitli = false;
 
+let aktifMod = "CIKIS";
 
-/* Ekrandaki mesaj */
-function durumYaz(metin) {
-  document.getElementById("durum").textContent = metin;
+
+function modSec(mod) {
+
+  aktifMod = mod;
+
+  const cikisBtn =
+    document.getElementById("cikisBtn");
+
+  const girisBtn =
+    document.getElementById("girisBtn");
+
+  cikisBtn.classList.remove("aktif");
+  girisBtn.classList.remove("aktif");
+
+  if (mod === "CIKIS") {
+
+    cikisBtn.classList.add("aktif");
+
+    durumYaz(
+      "🟢 ÇIKIŞ modu aktif\nQR kodu okutun."
+    );
+
+  } else {
+
+    girisBtn.classList.add("aktif");
+
+    durumYaz(
+      "🔵 GİRİŞ modu aktif\nQR kodu okutun."
+    );
+  }
 }
 
 
-/* QR okundu */
+function durumYaz(metin) {
+
+  document.getElementById("durum").textContent =
+    metin;
+}
+
+
 function qrOkundu(qrMetni) {
 
   if (taramaKilitli) {
     return;
   }
 
-  let kod = String(qrMetni || "").trim();
+  let kod =
+    String(qrMetni || "").trim();
 
-  /*
-   * QR doğrudan:
-   * MKAO-100
-   */
-  if (kod.toUpperCase().startsWith("MKAO-")) {
+  if (
+    kod.toUpperCase().startsWith("MKAO-")
+  ) {
 
     kod = kod.toUpperCase();
 
   } else {
 
-    /*
-     * QR bir URL ise kod parametresini al
-     */
     try {
 
       const url = new URL(kod);
-      const urlKod = url.searchParams.get("kod");
+
+      const urlKod =
+        url.searchParams.get("kod");
 
       if (urlKod) {
-        kod = urlKod.trim().toUpperCase();
+
+        kod =
+          urlKod.trim().toUpperCase();
       }
 
     } catch (e) {
-      // URL değilse devam
+
+      // QR URL değilse devam
     }
   }
 
-
   if (!kod) {
 
-    durumYaz("❌ Geçersiz QR kodu");
+    durumYaz(
+      "❌ Geçersiz QR kodu"
+    );
 
     return;
   }
-
 
   taramaKilitli = true;
 
@@ -162,12 +238,12 @@ function qrOkundu(qrMetni) {
   );
 
 
-  /*
-   * Apps Script JSONP sonucu
-   */
   window.mkaoSonuc = function(sonuc) {
 
-    console.log("Apps Script:", sonuc);
+    console.log(
+      "Apps Script:",
+      sonuc
+    );
 
 
     if (!sonuc) {
@@ -182,12 +258,11 @@ function qrOkundu(qrMetni) {
     }
 
 
-    /*
-     * RED / MÜKERRER
-     */
     if (sonuc.ok === false) {
 
-      if (sonuc.sonuc === "MÜKERRER") {
+      if (
+        sonuc.sonuc === "MÜKERRER"
+      ) {
 
         durumYaz(
           "⚠️ MÜKERRER ÇIKIŞ\n" +
@@ -198,16 +273,15 @@ function qrOkundu(qrMetni) {
 
         durumYaz(
           "❌ " +
-          (sonuc.mesaj || "İşlem reddedildi.")
+          (sonuc.mesaj ||
+           "İşlem reddedildi.")
         );
       }
 
 
       setTimeout(function() {
 
-        durumYaz(
-          "QR kodu kameraya gösterin."
-        );
+        modSec(aktifMod);
 
         taramaKilitli = false;
 
@@ -217,9 +291,6 @@ function qrOkundu(qrMetni) {
     }
 
 
-    /*
-     * ONAY
-     */
     if (
       sonuc.ok === true &&
       sonuc.sonuc === "ONAY"
@@ -237,9 +308,7 @@ function qrOkundu(qrMetni) {
 
       setTimeout(function() {
 
-        durumYaz(
-          "QR kodu kameraya gösterin."
-        );
+        modSec(aktifMod);
 
         taramaKilitli = false;
 
@@ -257,11 +326,9 @@ function qrOkundu(qrMetni) {
   };
 
 
-  /*
-   * JSONP isteği
-   */
   const script =
     document.createElement("script");
+
 
   script.src =
     BACKEND_URL +
@@ -269,6 +336,8 @@ function qrOkundu(qrMetni) {
     "&kod=" +
     encodeURIComponent(kod) +
     "&kaynak=KAPI" +
+    "&islem=" +
+    encodeURIComponent(aktifMod) +
     "&callback=mkaoSonuc" +
     "&t=" +
     Date.now();
@@ -287,20 +356,19 @@ function qrOkundu(qrMetni) {
   document.body.appendChild(script);
 
 
-  /*
-   * Geçici script temizliği
-   */
   setTimeout(function() {
 
     if (script.parentNode) {
-      script.parentNode.removeChild(script);
+
+      script.parentNode.removeChild(
+        script
+      );
     }
 
   }, 10000);
 }
 
 
-/* Kamerayı başlat */
 function kamerayiBaslat() {
 
   const scanner =
@@ -333,7 +401,7 @@ function kamerayiBaslat() {
   ).then(function() {
 
     durumYaz(
-      "📷 Kamera hazır – QR kodu okutun."
+      "🟢 ÇIKIŞ modu aktif\nQR kodu okutun."
     );
 
   }).catch(function(hata) {
@@ -349,7 +417,6 @@ function kamerayiBaslat() {
 }
 
 
-/* Sayfa açılınca kamera */
 window.addEventListener(
   "load",
   kamerayiBaslat
